@@ -18,7 +18,7 @@ flowchart TD
     B --> C[Frontend POST /api/consultation with Bearer token]
     C --> D[FastAPI validates auth + sanitizes input]
     D --> E[Backend builds constrained system/user prompts]
-    E --> F[OpenAI Chat Completions stream]
+    E --> F[LLM Provider stream \n OpenAI or Ollama]
     F --> G[SSE chunks streamed to browser]
     G --> H[ReactMarkdown renders final structured output]
 ```
@@ -36,7 +36,7 @@ flowchart LR
     subgraph Backend[Python API]
       API[api/server.py\nFastAPI + SSE endpoint]
       VAL[Input normalization + injection checks]
-      LLM[OpenAI gpt-5-nano]
+      LLM[Provider layer\nOpenAI or Ollama]
     end
 
     AUTH[Clerk JWKS + bearer validation]
@@ -64,7 +64,7 @@ flowchart LR
 - `FastAPI`
 - `pydantic`
 - `fastapi-clerk-auth`
-- `openai` SDK
+- `openai` SDK (used for both OpenAI and Ollama-compatible chat endpoints)
 - `uvicorn` for local API serving
 
 #### Developer tooling
@@ -94,9 +94,21 @@ yarn install
 Create `.env.local` for the frontend and `.env` for Python runtime as needed.
 At minimum, configure:
 
-- `OPENAI_API_KEY`
 - `CLERK_JWKS_URL`
 - Clerk publishable/secret keys used by the Next app
+- `LLM_PROVIDER` (`openai` or `ollama`)
+
+Provider-specific requirements:
+
+- For `LLM_PROVIDER=openai`
+  - `OPENAI_API_KEY`
+  - Optional: `OPENAI_MODEL` (defaults to `gpt-5-nano`)
+- For `LLM_PROVIDER=ollama`
+  - `OLLAMA_BASE_URL` (example: `http://localhost:11434`)
+  - `OLLAMA_MODEL` (example: `llama3.1:8b`)
+  - Optional: `OLLAMA_API_KEY` (defaults to `ollama`)
+- For Vercel frontend calling a separate backend:
+  - `NEXT_PUBLIC_API_BASE_URL` (example: `https://your-backend.example.com`)
 
 #### 3) Run frontend
 
@@ -107,9 +119,55 @@ yarn dev
 #### 4) Run backend
 
 ```bash
-pip install -r requirements.txt
-uvicorn api.server:app --reload --port 8000
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+yarn dev:api
 ```
+
+Always run backend through `.venv` (for example `yarn dev:api` or `.venv/bin/python -m uvicorn ...`).
+Using global `uvicorn` can load mismatched system site-packages and trigger `pydantic_core` architecture import errors.
+
+#### 5) Local Ollama workflow (development)
+
+```bash
+ollama serve
+ollama pull llama3.1:8b
+export LLM_PROVIDER=ollama
+export OLLAMA_BASE_URL=http://localhost:11434
+export OLLAMA_MODEL=llama3.1:8b
+yarn dev:api
+```
+
+#### 6) OpenAI workflow (alternative / production-compatible)
+
+```bash
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY=...
+export OPENAI_MODEL=gpt-5-nano
+yarn dev:api
+```
+
+### Deployment runbook (Vercel frontend + hosted FastAPI backend)
+
+1. Deploy the frontend to Vercel (static export remains enabled via `next.config.ts`).
+2. Deploy FastAPI backend to a VM/container host (not Vercel serverless) that can reach your model runtime.
+3. Set frontend env in Vercel:
+   - `NEXT_PUBLIC_API_BASE_URL=https://<your-backend-domain>`
+   - Clerk publishable/secret keys
+4. Set backend env:
+   - `CLERK_JWKS_URL`
+   - `LLM_PROVIDER`
+   - matching provider variables (`OPENAI_*` or `OLLAMA_*`)
+5. Configure backend CORS to allow your Vercel domain(s) instead of wildcard in production.
+
+### Troubleshooting
+
+- **Missing provider env vars**: backend returns clear config errors for missing `LLM_PROVIDER` settings.
+- **Model unavailable/timeouts**: backend returns `503` with provider error detail.
+- **No streamed output in browser**: verify `NEXT_PUBLIC_API_BASE_URL` points to backend and that proxy/CDN does not buffer `text/event-stream`.
+- **Auth failures across domains**: verify Clerk token forwarding and backend `CLERK_JWKS_URL`.
+- **CORS errors**: allow your exact Vercel frontend origins in backend CORS config.
 
 ### Quality gates (required standards)
 

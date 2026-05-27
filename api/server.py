@@ -7,7 +7,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi_clerk_auth import ClerkConfig, ClerkHTTPBearer, HTTPAuthorizationCredentials
-from openai import OpenAI
+
+from api.llm_provider import LLMConfigurationError, stream_consultation_chunks
 
 app = FastAPI()
 
@@ -104,7 +105,6 @@ def consultation_summary(
     creds: HTTPAuthorizationCredentials = Depends(clerk_guard),
 ):
     user_id = creds.decoded["sub"]
-    client = OpenAI()
 
     user_prompt = user_prompt_for(visit)
     prompt = [
@@ -112,21 +112,31 @@ def consultation_summary(
         {"role": "user", "content": user_prompt},
     ]
 
-    stream = client.chat.completions.create(
-        model="gpt-5-nano",
-        messages=prompt,
-        stream=True,
-    )
+    try:
+        stream = stream_consultation_chunks(prompt)
+    except LLMConfigurationError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"LLM provider unavailable: {str(exc)}",
+        ) from exc
 
     def event_stream():
-        for chunk in stream:
-            text = chunk.choices[0].delta.content
-            if text:
+        try:
+            for text in stream:
                 lines = text.split("\n")
                 for line in lines[:-1]:
                     yield f"data: {line}\n\n"
                     yield "data:  \n"
                 yield f"data: {lines[-1]}\n\n"
+        except LLMConfigurationError as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"LLM provider stream failed: {str(exc)}",
+            ) from exc
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

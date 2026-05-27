@@ -1,5 +1,32 @@
-.vercel
-.env.local
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Vercel
+.vercel/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+
+# Environment files
 .env
-.junie
-.idea
+.env.local
+.env.*.local
+quality-gates.local.md
+
+# IDE
+.idea/
+.junie/
+
+# OS
+.DS_Store

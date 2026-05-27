@@ -1,42 +1,142 @@
 # consultationAI
 
-`consultationAI` is a Next.js project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+`consultationAI` is a portfolio-grade, AI-assisted clinical documentation experience.
+It combines a `Next.js` frontend and a `FastAPI` backend to generate structured consultation outputs (summary, next steps, and patient-facing communication) from clinician notes.
 
-## Getting Started
+### Why this project is compelling
 
-First, run the development server:
+- Demonstrates full-stack ownership across frontend UX, backend APIs, auth, and LLM integration.
+- Uses streaming responses (`SSE`) for responsive, real-time UX.
+- Applies input hardening and basic prompt-injection defenses before calling the model.
+- Includes subscription gating and authenticated workflows via `Clerk`.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Product flow
+
+```mermaid
+flowchart TD
+    A[Clinician signs in via Clerk] --> B[Open /product and enter consultation data]
+    B --> C[Frontend POST /api/consultation with Bearer token]
+    C --> D[FastAPI validates auth + sanitizes input]
+    D --> E[Backend builds constrained system/user prompts]
+    E --> F[OpenAI Chat Completions stream]
+    F --> G[SSE chunks streamed to browser]
+    G --> H[ReactMarkdown renders final structured output]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Architecture overview
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+```mermaid
+flowchart LR
+    subgraph Frontend[Next.js App]
+      P1[pages/index.tsx\nLanding + Sign in]
+      P2[pages/product.tsx\nConsultation form + streaming UI]
+      APP[pages/_app.tsx\nClerkProvider + global styles]
+    end
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+    subgraph Backend[Python API]
+      API[api/server.py\nFastAPI + SSE endpoint]
+      VAL[Input normalization + injection checks]
+      LLM[OpenAI gpt-5-nano]
+    end
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+    AUTH[Clerk JWKS + bearer validation]
+    DEPLOY[Vercel project config + static export settings]
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    P1 --> P2
+    P2 -->|Bearer JWT| API
+    API --> AUTH
+    API --> VAL
+    API --> LLM
+    P2 --> DEPLOY
+```
 
-## Learn More
+### Tech stack
 
-To learn more about Next.js, take a look at the following resources:
+#### Frontend
+- `Next.js 15` (Pages Router, static export enabled in `next.config.ts`)
+- `React 19` + `TypeScript`
+- `Tailwind CSS 4`
+- `Clerk` for authentication/subscription controls
+- `react-datepicker`, `react-markdown`, `remark-gfm`, `remark-breaks`
+- `@microsoft/fetch-event-source` for streaming consumption
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+#### Backend
+- `FastAPI`
+- `pydantic`
+- `fastapi-clerk-auth`
+- `openai` SDK
+- `uvicorn` for local API serving
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+#### Developer tooling
+- `ESLint 9` with `next/core-web-vitals` and TypeScript rules
+- TypeScript strict mode enabled (`tsconfig.json`)
+- Vercel project configuration present in `.vercel/project.json`
 
-## Deploy on Vercel
+### Repository map
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `pages/index.tsx` — marketing/entry page and auth-aware navigation
+- `pages/product.tsx` — protected product UX and streaming summary UI
+- `pages/_app.tsx` — app-wide providers and global CSS imports
+- `api/server.py` — production-ready FastAPI endpoint (`/api/consultation`)
+- `api/index.py` — alternate/lightweight API entry implementation
+- `styles/globals.css` — Tailwind + markdown rendering styles
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+### Local development
+
+#### 1) Install dependencies
+
+```bash
+yarn install
+```
+
+#### 2) Configure environment variables
+
+Create `.env.local` for the frontend and `.env` for Python runtime as needed.
+At minimum, configure:
+
+- `OPENAI_API_KEY`
+- `CLERK_JWKS_URL`
+- Clerk publishable/secret keys used by the Next app
+
+#### 3) Run frontend
+
+```bash
+yarn dev
+```
+
+#### 4) Run backend
+
+```bash
+pip install -r requirements.txt
+uvicorn api.server:app --reload --port 8000
+```
+
+### Quality gates (required standards)
+
+This project should be maintained with the following non-negotiable thresholds:
+
+- **Functional code coverage:** `>= 80%`
+- **UI coverage:** critical paths covered (auth flow, consultation form, streaming output)
+- **Accessibility:** `100%` pass target on agreed checks (axe/Lighthouse policy)
+- **Responsiveness:** validated across mobile/tablet/desktop breakpoints
+
+A local, git-ignored quality contract file is supported:
+
+1. Copy `quality-gates.local.example.md` to `quality-gates.local.md`.
+2. Keep `quality-gates.local.md` updated with current coverage and audit status.
+3. Enforce these checks in CI before merge.
+
+### Recommendations to further impress senior/principal reviewers
+
+1. Add CI pipelines for frontend + backend tests, linting, and coverage reporting.
+2. Add Playwright/Cypress E2E tests for the consultation flow and auth gating.
+3. Add explicit a11y checks (`axe-core`, Lighthouse CI) and publish reports.
+4. Harden CORS (`allow_origins`) and environment-based security settings for production.
+5. Consolidate `api/index.py` and `api/server.py` into a single backend entrypoint to reduce drift.
+6. Add architecture decision records (`docs/adr`) to explain key trade-offs.
+
+### Deployment notes
+
+- Frontend static export is configured in `next.config.ts` (`output: 'export'`).
+- Vercel metadata exists in `.vercel/project.json`.
+- Backend deploy target can be containerized (`Dockerfile`) or run on a Python-compatible service.

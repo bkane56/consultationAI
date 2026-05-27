@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useState, FormEvent } from 'react';
+import Head from 'next/head';
 import { useAuth } from '@clerk/nextjs';
 import DatePicker from 'react-datepicker';
 import ReactMarkdown from 'react-markdown';
@@ -9,6 +10,10 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { Protect, PricingTable, UserButton } from '@clerk/nextjs';
+
+const RAW_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? '';
+const API_BASE_URL = RAW_API_BASE_URL.replace(/\/$/, '');
+const CONSULTATION_ENDPOINT = API_BASE_URL ? `${API_BASE_URL}/api/consultation` : '/api/consultation';
 
 function ConsultationForm() {
     const { getToken } = useAuth();
@@ -37,31 +42,37 @@ function ConsultationForm() {
         const controller = new AbortController();
         let buffer = '';
 
-        await fetchEventSource('/api/consultation', {
-            signal: controller.signal,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${jwt}`,
-            },
-            body: JSON.stringify({
-                patient_name: patientName,
-                date_of_visit: visitDate?.toISOString().slice(0, 10),
-                notes,
-            }),
-            onmessage(ev) {
-                buffer += ev.data;
-                setOutput(buffer);
-            },
-            onclose() {
-                setLoading(false);
-            },
-            onerror(err) {
-                console.error('SSE error:', err);
-                controller.abort();
-                setLoading(false);
-            },
-        });
+        try {
+            await fetchEventSource(CONSULTATION_ENDPOINT, {
+                signal: controller.signal,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${jwt}`,
+                },
+                body: JSON.stringify({
+                    patient_name: patientName,
+                    date_of_visit: visitDate?.toISOString().slice(0, 10),
+                    notes,
+                }),
+                onmessage(ev) {
+                    buffer += ev.data;
+                    setOutput(buffer);
+                },
+                onclose() {
+                    setLoading(false);
+                },
+                onerror(err) {
+                    console.error('SSE error:', err);
+                    controller.abort();
+                    setLoading(false);
+                },
+            });
+        } catch (err) {
+            console.error('Consultation request failed:', err);
+            setOutput('Unable to connect to the consultation service. Please try again.');
+            setLoading(false);
+        }
     }
 
     return (
@@ -140,33 +151,39 @@ function ConsultationForm() {
 
 export default function Product() {
     return (
-        <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-            {/* User Menu in Top Right */}
-            <div className="absolute top-4 right-4">
-                <UserButton showName={true} />
-            </div>
+        <>
+            <Head>
+                <title>Consultation Assistant | consultationAI</title>
+                <meta name="description" content="AI-powered consultation summaries, next steps, and patient-ready communication drafts." />
+            </Head>
+            <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+                {/* User Menu in Top Right */}
+                <div className="absolute top-4 right-4">
+                    <UserButton showName={true} />
+                </div>
 
-            {/* Subscription Protection */}
-            <Protect
-                plan="premium_subscription"
-                fallback={
-                    <div className="container mx-auto px-4 py-12">
-                        <header className="text-center mb-12">
-                            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-                                Healthcare Professional Plan
-                            </h1>
-                            <p className="text-gray-600 dark:text-gray-400 text-lg mb-8">
-                                Streamline your patient consultations with AI-powered summaries
-                            </p>
-                        </header>
-                        <div className="max-w-4xl mx-auto">
-                            <PricingTable />
+                {/* Subscription Protection */}
+                <Protect
+                    plan="premium_subscription"
+                    fallback={
+                        <div className="container mx-auto px-4 py-12">
+                            <header className="text-center mb-12">
+                                <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+                                    Healthcare Professional Plan
+                                </h1>
+                                <p className="text-gray-600 dark:text-gray-400 text-lg mb-8">
+                                    Streamline your patient consultations with AI-powered summaries
+                                </p>
+                            </header>
+                            <div className="max-w-4xl mx-auto">
+                                <PricingTable />
+                            </div>
                         </div>
-                    </div>
-                }
-            >
-                <ConsultationForm />
-            </Protect>
-        </main>
+                    }
+                >
+                    <ConsultationForm />
+                </Protect>
+            </main>
+        </>
     );
 }

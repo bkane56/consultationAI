@@ -19,8 +19,21 @@ vi.mock('@clerk/nextjs', () => ({
 }));
 
 vi.mock('react-datepicker', () => ({
-  default: (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-    <input data-testid="visit-date" value="2026-01-15" readOnly {...props} />
+  default: ({
+    dateFormat: _dateFormat,
+    placeholderText,
+    ...props
+  }: React.InputHTMLAttributes<HTMLInputElement> & {
+    dateFormat?: string;
+    placeholderText?: string;
+  }) => (
+    <input
+      data-testid="visit-date"
+      value="2026-01-15"
+      readOnly
+      placeholder={placeholderText}
+      {...props}
+    />
   ),
 }));
 

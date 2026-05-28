@@ -3,12 +3,38 @@
 `consultationAI` is a portfolio-grade, AI-assisted clinical documentation experience.
 It combines a `Next.js` frontend and a `FastAPI` backend to generate structured consultation outputs (summary, next steps, and patient-facing communication) from clinician notes.
 
+### Demo and data-safety positioning
+
+- This repository is a **demonstration/portfolio project** intended to showcase end-to-end AI engineering skills, not a production clinical system.
+- It is designed to run with `OLLAMA` in a contained/self-hosted runtime to reduce data exposure risk during demos.
+- <span style="color: #dc2626;"><strong>Do not use real PHI/PII or other regulated data</strong> in this demo environment.</span>
+- A production deployment would require formal security, privacy, and compliance controls (for example: BAAs where applicable, audited access controls, encryption at rest/in transit, key management, retention/deletion policies, incident response, and continuous monitoring).
+
+### Security posture (Demo vs Production)
+
+#### Threat-model checklist (what this demo acknowledges)
+
+- **Data classification:** treat all entered clinical text as potentially sensitive; never use real PHI/PII in this demo.
+- **Trust boundaries:** browser, frontend hosting, backend API, and model runtime are separate boundaries and should be explicitly controlled.
+- **Identity & access:** authenticated routes (`Clerk`) are required, but demo auth alone is not a full compliance program.
+- **Transport security:** require `HTTPS/TLS` end-to-end for browser-to-backend and backend-to-model traffic in any internet-facing deployment.
+- **Secrets management:** keep API keys/tokens in environment variables or secret managers; never commit credentials.
+- **Injection resistance:** maintain prompt/input hardening and validation before model invocation.
+- **CORS discipline:** allow only exact frontend origins (no wildcard) in non-local environments.
+- **Observability:** log operational events and errors, but avoid storing raw sensitive note content.
+- **Supply chain hygiene:** pin dependencies, scan images/packages, and patch known vulnerabilities.
+
+#### Architecture note
+
+This project intentionally demonstrates a security-conscious pattern: a `Next.js` frontend deployed separately from a guarded `FastAPI` backend, with model inference routed to a contained/self-hosted `Ollama` runtime to reduce unnecessary data exposure during demos. In production, this same topology must be augmented with formal controls (for example: regulated-data governance, audited access control, encryption and key lifecycle management, incident response, continuous monitoring, and contractual/compliance requirements such as BAAs where applicable).
+
 ### Why this project is compelling
 
 - Demonstrates full-stack ownership across frontend UX, backend APIs, auth, and LLM integration.
 - Uses streaming responses (`SSE`) for responsive, real-time UX.
 - Applies input hardening and basic prompt-injection defenses before calling the model.
 - Includes subscription gating and authenticated workflows via `Clerk`.
+- Clearly distinguishes demo constraints from real-world security/compliance requirements.
 
 ### Product flow
 
@@ -140,3 +166,4 @@ A local, git-ignored quality contract file is supported:
 - Frontend static export is configured in `next.config.ts` (`output: 'export'`).
 - Vercel metadata exists in `.vercel/project.json`.
 - Backend deploy target can be containerized (`Dockerfile`) or run on a Python-compatible service.
+- See `vercel-backend-release-runbook.md` for exact release steps and provider-specific deployment guidance.

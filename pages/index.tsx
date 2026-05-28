@@ -34,6 +34,14 @@ export default function Home() {
                     </div>
                 </nav>
 
+                <div className="mb-8 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-left text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+                    <p className="font-semibold">Professional Notice: Demonstration System</p>
+                    <p>
+                        This portfolio application is for demonstration purposes only and must not be used with real patient,
+                        personal, or otherwise regulated data.
+                    </p>
+                </div>
+
                 {/* Hero Section */}
                 <div className="text-center py-16">
                     <h2 className="text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
@@ -97,7 +105,7 @@ export default function Home() {
 
                 {/* Trust Indicators */}
                 <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                    <p>HIPAA Compliant • Secure • Professional</p>
+                    <p>Demo-Only • Security-Conscious Architecture • Professional Engineering Showcase</p>
                 </div>
             </div>
         </main>

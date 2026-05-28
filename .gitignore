@@ -30,3 +30,6 @@ quality-gates.local.md
 
 # OS
 .DS_Store
+
+# Local archive (non-committed misc/planning files)
+junk-to-ignore/

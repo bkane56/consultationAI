@@ -63,7 +63,55 @@ CLERK_SECRET_KEY=sk_...
 
 ## 3) Release backend to Render (recommended path)
 
-### 3.1 Create service
+### 3.0 Deploy Ollama as a Render service
+
+Ollama must run as its own Render service using the public `ollama/ollama` Docker image. **Do not use the project `Dockerfile` for Ollama.**
+
+#### Architecture summary
+
+| Service | Image | Port |
+|---------|-------|------|
+| `consultation-backend` | Project `Dockerfile` (FastAPI) | `8000` |
+| `ollama` | `ollama/ollama` (public image) | `11434` |
+
+#### Steps to create the Ollama service
+
+1. In Render: `New` -> `Web Service`.
+2. On the source selection screen, choose **"Existing Image"** (also labeled "Deploy an existing Docker image" in some Render UI versions). If you see options like "Git Repository" and "Public Git Repository", look for the **"Existing Image"** tab or option.
+3. In the image field, enter: `ollama/ollama`
+4. Click **Connect** or **Next**.
+5. Name the service (e.g. `ollama`).
+6. Region: **same region as your backend service**.
+7. Add environment variable:
+   ```bash
+   OLLAMA_HOST=0.0.0.0
+   ```
+   > **Note:** Render does not show a separate "Port" field for image-based services. The port (`11434`) is defined by the `ollama/ollama` image itself and is used automatically for internal networking. You do not need to set it manually.
+8. Click **Deploy**.
+
+#### Pull the model after first deploy
+
+Once the Ollama service is running:
+
+1. In Render dashboard, open the `ollama` service.
+2. Click **Shell** (top-right tab).
+3. Run:
+   ```bash
+   ollama pull llama3.1:8b
+   ```
+4. Wait for the pull to complete before sending traffic from the backend.
+
+#### Get the Internal URL
+
+In the Render dashboard for the `ollama` service, find the **Internal URL** (shown under the service name). It will look like:
+
+```
+http://ollama:11434
+```
+
+Copy this — you will use it as `OLLAMA_BASE_URL` in the backend service.
+
+### 3.1 Create backend service
 
 1. In Render: `New` -> `Web Service`.
 2. Connect the same Git repository.
@@ -78,10 +126,12 @@ Use these in Render environment settings:
 ```bash
 CLERK_JWKS_URL=https://<your-clerk-domain>/.well-known/jwks.json
 LLM_PROVIDER=ollama
-OLLAMA_BASE_URL=http://<ollama-host>:11434
+OLLAMA_BASE_URL=http://<your-ollama-service-name>:11434
 OLLAMA_MODEL=llama3.1:8b
 OLLAMA_API_KEY=ollama
 ```
+
+> **Note:** Replace `<your-ollama-service-name>` with the Internal URL name shown in your Render Ollama service dashboard (e.g. `ollama` if that is the service name). `localhost` will **not** work here — Ollama is a separate Render service.
 
 Recommended additional vars:
 
@@ -89,6 +139,8 @@ Recommended additional vars:
 PYTHONUNBUFFERED=1
 PORT=8000
 ```
+
+> **Verify connectivity:** After both services are deployed, check backend logs for connection errors to Ollama on the first request. A 503 response with "LLM provider unavailable" usually means `OLLAMA_BASE_URL` is wrong or the model has not been pulled yet.
 
 ### 3.3 Configure CORS on backend
 
@@ -160,7 +212,7 @@ CLERK_SECRET_KEY=sk_...
 ```bash
 CLERK_JWKS_URL=https://<your-clerk-domain>/.well-known/jwks.json
 LLM_PROVIDER=ollama
-OLLAMA_BASE_URL=http://<ollama-host>:11434
+OLLAMA_BASE_URL=http://<your-ollama-service-name>:11434
 OLLAMA_MODEL=llama3.1:8b
 OLLAMA_API_KEY=ollama
 PORT=8000

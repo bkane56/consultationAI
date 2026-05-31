@@ -18,8 +18,18 @@
     }
   },
   "include": [
-    "next-env.d.ts", "**/*.ts", "**/*.tsx"],
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "vitest.setup.ts",
+    "vitest.config.ts",
+    "tests",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }

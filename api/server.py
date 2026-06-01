@@ -13,12 +13,21 @@ from api.llm_provider import LLMConfigurationError, stream_consultation_chunks
 app = FastAPI()
 
 # Add CORS middleware (allows frontend to call backend)
+def get_frontend_origins() -> list[str]:
+    raw_origins = os.getenv("FRONTEND_ORIGINS", "")
+    return [
+        origin.strip().rstrip("/")
+        for origin in raw_origins.split(",")
+        if origin.strip()
+    ]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=get_frontend_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Clerk authentication setup

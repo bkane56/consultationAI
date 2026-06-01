@@ -66,6 +66,8 @@ function ConsultationForm() {
                     console.error('SSE error:', err);
                     controller.abort();
                     setLoading(false);
+                    setOutput('Unable to connect to the consultation service. Please try again.');
+                    throw err;
                 },
             });
         } catch (err) {

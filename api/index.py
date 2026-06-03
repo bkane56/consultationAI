@@ -21,6 +21,7 @@ class Visit(BaseModel):
 system_prompt = """
 You are provided with notes written by a doctor from a patient's visit.
 Your job is to summarize the visit for the doctor and provide an email.
+Correct any typo errors in the input so the patient's notes are clear and accurate.
 Reply with exactly three sections with the headings:
 ### Summary of visit for the doctor's records
 ### Next steps for the doctor

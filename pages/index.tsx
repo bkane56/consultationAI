@@ -2,6 +2,19 @@
 
 import Link from 'next/link';
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import {
+    APP_NAME,
+    APP_DESCRIPTION,
+    FEATURES,
+    FOOTER_TRUST_LINE,
+    LABEL_GO_TO_APP,
+    LABEL_OPEN_CONSULTATION_ASSISTANT,
+    LABEL_SIGN_IN,
+    LABEL_START_FREE_TRIAL,
+    NOTICE_DEMO_BODY,
+    NOTICE_DEMO_TITLE,
+    ROUTE_PRODUCT,
+} from '../constants/ui_constants';
 
 export default function Home() {
     return (
@@ -10,23 +23,23 @@ export default function Home() {
                 {/* Navigation */}
                 <nav className="flex justify-between items-center mb-12">
                     <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                        MediNotes Pro
+                        {APP_NAME}
                     </h1>
                     <div>
                         <SignedOut>
                             <SignInButton mode="modal">
                                 <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
-                                    Sign In
+                                    {LABEL_SIGN_IN}
                                 </button>
                             </SignInButton>
                         </SignedOut>
                         <SignedIn>
                             <div className="flex items-center gap-4">
                                 <Link
-                                    href="/product"
+                                    href={ROUTE_PRODUCT}
                                     className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
                                 >
-                                    Go to App
+                                    {LABEL_GO_TO_APP}
                                 </Link>
                                 <UserButton showName={true} />
                             </div>
@@ -35,11 +48,8 @@ export default function Home() {
                 </nav>
 
                 <div className="mb-8 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-left text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
-                    <p className="font-semibold">Professional Notice: Demonstration System</p>
-                    <p>
-                        This portfolio application is for demonstration purposes only and must not be used with real patient,
-                        personal, or otherwise regulated data.
-                    </p>
+                    <p className="font-semibold">{NOTICE_DEMO_TITLE}</p>
+                    <p>{NOTICE_DEMO_BODY}</p>
                 </div>
 
                 {/* Hero Section */}
@@ -50,63 +60,45 @@ export default function Home() {
                         Consultation Notes
                     </h2>
                     <p className="text-xl text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
-                        AI-powered assistant that generates professional summaries, action items, and patient communications from your consultation notes
+                        {APP_DESCRIPTION}
                     </p>
 
                     {/* Features Grid */}
                     <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-12">
-                        <div className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-                            <div className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
-                                <div className="text-3xl mb-4">📋</div>
-                                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Professional Summaries</h3>
-                                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                                    Generate comprehensive medical record summaries from your notes
-                                </p>
+                        {FEATURES.map((feature, index) => (
+                            <div key={index} className="relative group">
+                                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
+                                <div className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
+                                    <div className="text-3xl mb-4">{feature.icon}</div>
+                                    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">{feature.title}</h3>
+                                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                                        {feature.description}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-green-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-                            <div className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
-                                <div className="text-3xl mb-4">✅</div>
-                                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Action Items</h3>
-                                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                                    Clear next steps and follow-up actions for every consultation
-                                </p>
-                            </div>
-                        </div>
-                        <div className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-                            <div className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
-                                <div className="text-3xl mb-4">📧</div>
-                                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Patient Emails</h3>
-                                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                                    Draft clear, patient-friendly email communications automatically
-                                </p>
-                            </div>
-                        </div>
+                        ))}
                     </div>
 
                     <SignedOut>
                         <SignInButton mode="modal">
                             <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all transform hover:scale-105">
-                                Start Free Trial
+                                {LABEL_START_FREE_TRIAL}
                             </button>
                         </SignInButton>
                     </SignedOut>
                     <SignedIn>
                         <Link
-                            href="/product"
+                            href={ROUTE_PRODUCT}
                             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all transform hover:scale-105 inline-block"
                         >
-                            Open Consultation Assistant
+                            {LABEL_OPEN_CONSULTATION_ASSISTANT}
                         </Link>
                     </SignedIn>
                 </div>
 
                 {/* Trust Indicators */}
                 <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                    <p>Demo-Only • Security-Conscious Architecture • Professional Engineering Showcase</p>
+                    <p>{FOOTER_TRUST_LINE}</p>
                 </div>
             </div>
         </main>

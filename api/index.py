@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends  # type: ignore
 from fastapi.responses import StreamingResponse  # type: ignore
 from pydantic import BaseModel  # type: ignore
 from fastapi_clerk_auth import ClerkConfig, ClerkHTTPBearer, HTTPAuthorizationCredentials  # type: ignore
-from openai import OpenAI  # type: ignore
+from api.llm_provider import stream_consultation_chunks
 
 app = FastAPI()
 clerk_config = ClerkConfig(jwks_url=os.getenv("CLERK_JWKS_URL"))
@@ -37,32 +37,16 @@ Notes:
 @app.post("/api")
 def consultation_summary(
     visit: Visit,
-    creds: HTTPAuthorizationCredentials = Depends(clerk_guard),
-):
-    user_id = creds.decoded["sub"]  # Available for tracking/auditing
-    client = OpenAI()
-
-    user_prompt = user_prompt_for(visit)
-
-    prompt = [
+    _creds: HTTPAuthorizationCredentials = Depends(clerk_guard),
+) -> StreamingResponse:
+    """Stream an AI-generated consultation summary for the given visit."""
+    messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
+        {"role": "user", "content": user_prompt_for(visit)},
     ]
 
-    stream = client.chat.completions.create(
-        model="gpt-5-nano",
-        messages=prompt,
-        stream=True,
-    )
-
     def event_stream():
-        for chunk in stream:
-            text = chunk.choices[0].delta.content
-            if text:
-                lines = text.split("\n")
-                for line in lines[:-1]:
-                    yield f"data: {line}\n\n"
-                    yield "data:  \n"
-                yield f"data: {lines[-1]}\n\n"
+        for text in stream_consultation_chunks(messages):
+            yield f"data: {text}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

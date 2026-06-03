@@ -95,10 +95,11 @@ export default function Home() {
                         </SignInButton>
                     </SignedOut>
                     <SignedIn>
-                        <Link href="/product">
-                            <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all transform hover:scale-105">
-                                Open Consultation Assistant
-                            </button>
+                        <Link
+                            href="/product"
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all transform hover:scale-105 inline-block"
+                        >
+                            Open Consultation Assistant
                         </Link>
                     </SignedIn>
                 </div>

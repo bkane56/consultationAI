@@ -140,12 +140,9 @@ def consultation_summary(
                     yield "data:  \n"
                 yield f"data: {lines[-1]}\n\n"
         except LLMConfigurationError as exc:
-            raise HTTPException(status_code=500, detail=str(exc)) from exc
+            yield f"event: error\ndata: {str(exc)}\n\n"
         except Exception as exc:
-            raise HTTPException(
-                status_code=503,
-                detail=f"LLM provider stream failed: {str(exc)}",
-            ) from exc
+            yield f"event: error\ndata: LLM provider stream failed: {str(exc)}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 

@@ -56,6 +56,12 @@ function ConsultationForm() {
                     notes,
                 }),
                 onmessage(ev) {
+                    if (ev.event === 'error') {
+                        setOutput(`Error: ${ev.data}`);
+                        setLoading(false);
+                        controller.abort();
+                        return;
+                    }
                     buffer += ev.data;
                     setOutput(buffer);
                 },

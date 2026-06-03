@@ -4,3 +4,4 @@ openai
 fastapi-clerk-auth
 pydantic
 pytest
+python-dotenv

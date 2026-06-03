@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv  # type: ignore
+load_dotenv(".env.local")
 from fastapi import FastAPI, Depends  # type: ignore
 from fastapi.responses import StreamingResponse  # type: ignore
 from pydantic import BaseModel  # type: ignore
